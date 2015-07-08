@@ -36,13 +36,17 @@ public class ArtistAdapter extends ArrayAdapter<Artist> {
         View rootView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_artist, parent, false);
 
         ImageView artistImage = (ImageView) rootView.findViewById(R.id.list_item_artist_imageView);
-        if (artist.images.size() >= 1) {
-            Picasso.with(context).load(artist.images.get(artist.images.size()-1).url).into(artistImage);
+        if (artist.images != null) {
+            if (artist.images.size() >= 1) {
+                Picasso.with(context).load(artist.images.get(artist.images.size() - 1).url).into(artistImage);
+            } else {
+                //This image belongs to Greg Hickman and is under creative commons license Attribution-NonCommercial-NoDerivs 2.0 Generic
+                //(CC BY-NC-ND 2.0) please see https://www.flickr.com/photos/greghickman/4306344519
+                artistImage.setImageResource(R.drawable.blankartist);
+            }
         }
         else
         {
-            //This image belongs to Greg Hickman and is under creative commons license Attribution-NonCommercial-NoDerivs 2.0 Generic
-            //(CC BY-NC-ND 2.0) please see https://www.flickr.com/photos/greghickman/4306344519
             artistImage.setImageResource(R.drawable.blankartist);
         }
 

@@ -28,7 +28,14 @@ import retrofit.client.Response;
  */
 public class TopTracksActivityFragment extends Fragment {
 
-    public TopTracksActivityFragment() {
+    private ArrayList<Track> topTracks;
+
+    public void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+
+        // Retain this fragment across configuration changes.
+        setRetainInstance(true);
     }
 
     @Override
@@ -37,11 +44,16 @@ public class TopTracksActivityFragment extends Fragment {
 
         final View rootView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
 
+        if (topTracks == null)
+        {
+            topTracks = new ArrayList<Track>();
+        }
+
         final TrackAdapter trackResultsAdapter =
                 new TrackAdapter(
                         getActivity(), // The current context (this activity)
                         R.layout.list_item_track, // The name of the layout ID.
-                        new ArrayList<Track>());
+                        topTracks);
 
         //Attach listview to Adapter
         final ListView listView = (ListView) rootView.findViewById(R.id.track_results_listView);
