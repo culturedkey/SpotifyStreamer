@@ -107,6 +107,11 @@ public class MainActivityFragment extends Fragment {
             @Override
             public void failure(SpotifyError spotifyError) {
                 Log.e("RetrofitError", "Error: " + spotifyError.getMessage());
+                int duration = Toast.LENGTH_SHORT;
+                Context context = rootView.getContext();
+                CharSequence text = getString(R.string.checkConnection);
+                Toast toast = Toast.makeText(context, text, duration);
+                toast.show();
             }
 
             @Override

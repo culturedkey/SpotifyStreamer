@@ -9,4 +9,5 @@
     <string name="hello_world">Hello world!</string>
     <string name="toolBar_title_main">Spotify Streamer</string>
     <string name="toolBar_title_topTen">Top 10 Tracks</string>
+    <string name="checkConnection">There was a problem getting your requested data. Please check your internet connection and verify Spotify is online.</string>
 </resources>

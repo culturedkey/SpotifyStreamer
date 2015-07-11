@@ -29,31 +29,50 @@ public class ArtistAdapter extends ArrayAdapter<Artist> {
 
     }
 
-    public View getView (int position, View view, ViewGroup parent)
+    public View getView (int position, View convertView, ViewGroup parent)
     {
 
-        Artist artist = getItem(position);
-        View rootView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_artist, parent, false);
+        //Below code is to prevent endless views from being created per my second reviewer.
+        LayoutInflater inflater = (LayoutInflater) context
+                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
-        ImageView artistImage = (ImageView) rootView.findViewById(R.id.list_item_artist_imageView);
+        // A holder will hold the references
+        // to your views.
+        viewHolder holder;
+        Artist artist = getItem(position);
+
+        if(convertView == null) {
+            convertView = inflater.inflate(R.layout.list_item_artist, parent, false);
+            holder = new viewHolder();
+            holder.artistTextView = (TextView) convertView.findViewById(R.id.list_item_artist_textView);
+            holder.artistImageView = (ImageView) convertView.findViewById(R.id.list_item_artist_imageView);
+            convertView.setTag(holder);
+        }
+        else {
+            holder = (viewHolder) convertView.getTag();
+        }
+        holder.artistTextView.setText(artist.name);
         if (artist.images != null) {
-            if (artist.images.size() >= 1) {
-                Picasso.with(context).load(artist.images.get(artist.images.size() - 1).url).into(artistImage);
-            } else {
-                //This image belongs to Greg Hickman and is under creative commons license Attribution-NonCommercial-NoDerivs 2.0 Generic
-                //(CC BY-NC-ND 2.0) please see https://www.flickr.com/photos/greghickman/4306344519
-                artistImage.setImageResource(R.drawable.blankartist);
+            if (artist.images.size()>= 1) {
+                Picasso.with(context)
+                        .load(artist.images.get(artist.images.size()-1).url)
+                        .into(holder.artistImageView);
+            }
+            else {
+                holder.artistImageView.setImageResource(R.drawable.blankartist);
             }
         }
-        else
-        {
-            artistImage.setImageResource(R.drawable.blankartist);
+        else {
+            holder.artistImageView.setImageResource(R.drawable.blankartist);
         }
 
-
-        TextView artistName = (TextView) rootView.findViewById(R.id.list_item_artist_textView);
-        artistName.setText(artist.name);
-
-        return rootView;
+        return convertView;
     }
+
+    class viewHolder {
+        // declare your views here
+        TextView artistTextView;
+        ImageView artistImageView;
+    }
+
 }

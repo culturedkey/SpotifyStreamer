@@ -1,5 +1,6 @@
 package com.example.christen.spotifystreamer;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -9,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -83,6 +85,11 @@ public class TopTracksActivityFragment extends Fragment {
                 @Override
                 public void failure(RetrofitError spotifyError) {
                     Log.e("RetrofitError", "Error: " + spotifyError.getMessage());
+                    int duration = Toast.LENGTH_SHORT;
+                    Context context = rootView.getContext();
+                    CharSequence text = getString(R.string.checkConnection);
+                    Toast toast = Toast.makeText(context, text, duration);
+                    toast.show();
                 }
 
                 @Override
