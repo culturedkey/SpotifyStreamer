@@ -1,5 +1,21 @@
-<fragment xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:id="@+id/fragment"
-    android:name="com.example.christen.spotifystreamer.TopTracksActivityFragment"
-    tools:layout="@layout/fragment_top_tracks" android:layout_width="match_parent"
-    android:layout_height="match_parent" />
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/top_track_container"
+    tools:context="com.example.christen.spotifystreamer.TopTracksActivity"
+    tools:ignore="MergeRootFrame"
+    >
+    <android.support.v7.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/trackActivityToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/actionBarSize"
+        android:background="#89c149"
+        android:contentInsetEnd="0dp"
+        android:contentInsetStart="0dp"
+
+        />
+    </RelativeLayout>
+
