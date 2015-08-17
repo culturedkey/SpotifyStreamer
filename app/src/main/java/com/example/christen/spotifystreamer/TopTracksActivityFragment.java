@@ -1,13 +1,15 @@
 package com.example.christen.spotifystreamer;
 
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -33,26 +35,29 @@ public class TopTracksActivityFragment extends Fragment {
     private ArrayList<Track> topTracks;
     private TrackAdapter trackResultsAdapter;
 
+    private int mPosition = ListView.INVALID_POSITION;
+
+    private static final String SELECTED_KEY = "selected_position";
+
     private String mArtistName;
     private String mArtistID;
-//
-//    public void onCreate(Bundle savedInstanceState)
-//    {
-//        super.onCreate(savedInstanceState);
-//
-//        // Retain this fragment across configuration changes.
-//        setRetainInstance(true);
-//    }
+    boolean mIsLargeLayout;
+
+    public void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+
+
+        mIsLargeLayout = getResources().getBoolean(R.bool.large_layout);
+        // Retain this fragment across configuration changes.
+        setRetainInstance(true);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         rootView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
-
-
-        //TODO: make a method with the code from the if statement below grabbing the top tracks
-        //when a artist string is passed in
 
         if (topTracks == null)
         {
@@ -69,25 +74,75 @@ public class TopTracksActivityFragment extends Fragment {
         final ListView listView = (ListView) rootView.findViewById(R.id.track_results_listView);
         listView.setAdapter(trackResultsAdapter);
 
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                Track trackSelected = trackResultsAdapter.getItem(position);
+                if (trackSelected != null) {
+                    //TODO: Get track info and pass to next intent!
+                    showDialog();
+                }
+                mPosition = position;
+            }
+        });
+
         Bundle arguments = getArguments();
         if (arguments != null && arguments.getString("artistID") != null){
             mArtistID = arguments.getString("artistID");
             getTopTracks(mArtistID);
         }
+//
+//        else {
+//            Intent intent = getActivity().getIntent();
+//            if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
+//                mArtistID = intent.getStringExtra(Intent.EXTRA_TEXT);
+//                getTopTracks(mArtistID);
+//
+//                //Do we get in here when its a phone?? Test this...
+//
+//            }
+//        }
 
-        else {
-            Intent intent = getActivity().getIntent();
-            if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
-                mArtistID = intent.getStringExtra(Intent.EXTRA_TEXT);
-                getTopTracks(mArtistID);
 
-                //Do we get in here when its a phone?? Test this...
-
-            }
+        //If there's instance state, mine it for useful information. Modified from Sunshine
+        if (savedInstanceState != null && savedInstanceState.containsKey(SELECTED_KEY)) {
+            // The listview probably hasn't even been populated yet.  Actually perform the
+            // swapout in onLoadFinished.
+            mPosition = savedInstanceState.getInt(SELECTED_KEY);
         }
             return  rootView;
     }
+    public void showDialog() {
+        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
+        NowPlayingFragment newFragment = new NowPlayingFragment();
 
+        if (mIsLargeLayout) {
+            // The device is using a large layout, so show the fragment as a dialog
+            newFragment.show(fragmentManager, "dialog");
+        } else {
+            // The device is smaller, so show the fragment fullscreen
+            FragmentTransaction transaction = fragmentManager.beginTransaction();
+            // For a little polish, specify a transition animation
+            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+            // To make it fullscreen, use the 'content' root view as the container
+            // for the fragment, which is always the root view for the activity
+
+            //TODO: Fix phone UI - the fragment is showing on top of the top tracks UI.
+            transaction.add(android.R.id.content, newFragment)
+                    .addToBackStack(null).commit();
+        }
+    }
+
+    public void onSaveInstanceState(Bundle outState){
+        //Save currently selected list item
+        if (mPosition != ListView.INVALID_POSITION){
+            outState.putInt(SELECTED_KEY,mPosition);
+        }
+
+        super.onSaveInstanceState(outState);
+
+    }
     private void getTopTracks (String artistID){
         //Setup spotify wrapper and get tracks
 

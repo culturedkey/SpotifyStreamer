@@ -45,7 +45,6 @@ public class MainActivityFragment extends Fragment {
     private int mPosition = ListView.INVALID_POSITION;
 
     private static final String SELECTED_KEY = "selected_position";
-    private static final int MAIN_LOADER = 0;
 
     public interface Callback {
         /**
@@ -58,25 +57,23 @@ public class MainActivityFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-
+        // Retain this fragment across configuration changes.
+        setRetainInstance(true);
     }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-//        if (artistsList == null)
-//        {
-//            artistsList = new ArrayList<Artist>();
-//        }
-//
-//        artistResults =
-//                new ArtistAdapter(
-//                        getActivity(), // The current context (this activity)
-//                        R.layout.list_item_artist, // The name of the layout ID.
-//                        artistsList);
-        artistResults = new ArtistAdapter(
-                            getActivity(),
-                            R.layout.list_item_artist,
-                            new ArrayList<Artist>());
+        if (artistsList == null)
+        {
+            artistsList = new ArrayList<Artist>();
+        }
+
+        artistResults =
+                new ArtistAdapter(
+                        getActivity(), // The current context (this activity)
+                        R.layout.list_item_artist, // The name of the layout ID.
+                        artistsList);
+
 
         rootView =  inflater.inflate(R.layout.fragment_main, container, false);
 
@@ -114,6 +111,11 @@ public class MainActivityFragment extends Fragment {
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
 
                     setData(v.getText().toString());
+                    //Hide keyboard - code from Guarav Pandey at https://discussions.udacity.com/t/imeoptions-not-showing-up-in-oneditoraction/22122
+                    InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+
+                    v.clearFocus();
 
                     handled = true;
                 }
@@ -134,31 +136,7 @@ public class MainActivityFragment extends Fragment {
         super.onSaveInstanceState(outState);
 
     }
-//    @Override
-//    public void onActivityCreated(Bundle savedInstanceState){
-//        getLoaderManager().initLoader(MAIN_LOADER, null, this);
-//        super.onActivityCreated(savedInstanceState);
-//    }
-//    @Override
-//    public Loader<Artist> onCreateLoader (int i, Bundle bundle){
-//        Loader<Artist> loader = new Loader<>(getActivity());
-//        return loader;
-//    }
-//
-//    @Override
-//    public void onLoadFinished(Loader<Artist> loader, Cursor data) {
-//        artistResults.swapCursor(data);
-//        if (mPosition != ListView.INVALID_POSITION) {
-//            // If we don't need to restart the loader, and there's a desired position to restore
-//            // to, do so now.
-//            mlistView.smoothScrollToPosition(mPosition);
-//        }
-//    }
-//
-//    @Override
-//    public void onLoaderReset(Loader<Artist> loader) {
-//        artistResults.swapCursor(null);
-//    }
+
 
     public void setData(String artistName){
         searchString = artistName;
@@ -194,11 +172,10 @@ public class MainActivityFragment extends Fragment {
                         artistResults.add(result);
                     }
 
-                    //Hide keyboard - code from Guarav Pandey at https://discussions.udacity.com/t/imeoptions-not-showing-up-in-oneditoraction/22122
-                    InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+
 
                 }
+
             }
         });
     }

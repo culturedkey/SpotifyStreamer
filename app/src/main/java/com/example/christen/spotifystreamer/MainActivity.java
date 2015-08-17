@@ -2,6 +2,7 @@ package com.example.christen.spotifystreamer;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
 
@@ -16,6 +17,7 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
 
     private boolean mTwoPane;
 
+    private MainActivityFragment mTaskFragment;
 
 
     @Override
@@ -23,25 +25,34 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        if (findViewById(R.id.top_track_container) != null) {
-            //Detail container only exists in large screen layouts, thus activity is in
-            //two pane mode
+        FragmentManager fm = getSupportFragmentManager();
+        mTaskFragment = (MainActivityFragment) fm.findFragmentByTag(TAG_TASK_FRAGMENT);
 
-            mTwoPane = true;
+        // If the Fragment is non-null, then it is currently being
+        // retained across a configuration change.
+        if (mTaskFragment == null) {
+            mTaskFragment = new MainActivityFragment();
+            fm.beginTransaction().add(mTaskFragment, TAG_TASK_FRAGMENT).commit();
+        }
+            if (findViewById(R.id.top_track_container) != null) {
+                //Detail container only exists in large screen layouts, thus activity is in
+                //two pane mode
 
-            if(savedInstanceState == null) {
-                getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.top_track_container, new TopTracksActivityFragment(), TOPTRACKS_TAG)
-                        .commit();
+                mTwoPane = true;
+
+                if (savedInstanceState == null) {
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.top_track_container, new TopTracksActivityFragment(), TOPTRACKS_TAG)
+                            .commit();
+                }
+            } else {
+                mTwoPane = false;
             }
-        }
-        else {
-            mTwoPane = false;
-        }
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setTitle(R.string.toolBar_title_main);
-        setSupportActionBar(toolbar);
+            Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+            toolbar.setTitle(R.string.toolBar_title_main);
+            setSupportActionBar(toolbar);
+
     }
 
     public void onItemSelected (String artistIDandName){

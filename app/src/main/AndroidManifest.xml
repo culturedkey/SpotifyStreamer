@@ -27,6 +27,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.christen.spotifystreamer.MainActivity" />
         </activity>
+        <activity
+            android:name=".NowPlayingActivity"
+            android:label="@string/title_activity_now_playing" >
+        </activity>
     </application>
 
 </manifest>
