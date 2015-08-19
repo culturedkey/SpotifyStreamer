@@ -1,10 +1,10 @@
 package com.example.christen.spotifystreamer;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,7 +33,7 @@ public class TopTracksActivityFragment extends Fragment {
 
     private View rootView;
     private ArrayList<Track> topTracks;
-    private TrackAdapter trackResultsAdapter;
+    private TracksAdapter trackResultsAdapter;
 
     private int mPosition = ListView.INVALID_POSITION;
 
@@ -65,7 +65,7 @@ public class TopTracksActivityFragment extends Fragment {
         }
 
          trackResultsAdapter =
-                new TrackAdapter(
+                new TracksAdapter(
                         getActivity(), // The current context (this activity)
                         R.layout.list_item_track, // The name of the layout ID.
                         topTracks);
@@ -79,15 +79,20 @@ public class TopTracksActivityFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
                 Track trackSelected = trackResultsAdapter.getItem(position);
+                String trackID = trackSelected.id;
                 if (trackSelected != null) {
                     //TODO: Get track info and pass to next intent!
-                    showDialog();
+                    showDialog(trackID);
                 }
                 mPosition = position;
             }
         });
 
         Bundle arguments = getArguments();
+        if (savedInstanceState != null && savedInstanceState.containsKey("artistID")){
+            mArtistID = savedInstanceState.getString("artistID");
+            getTopTracks(mArtistID);
+        }
         if (arguments != null && arguments.getString("artistID") != null){
             mArtistID = arguments.getString("artistID");
             getTopTracks(mArtistID);
@@ -106,31 +111,31 @@ public class TopTracksActivityFragment extends Fragment {
 
 
         //If there's instance state, mine it for useful information. Modified from Sunshine
-        if (savedInstanceState != null && savedInstanceState.containsKey(SELECTED_KEY)) {
+        if (savedInstanceState != null ) {
             // The listview probably hasn't even been populated yet.  Actually perform the
             // swapout in onLoadFinished.
             mPosition = savedInstanceState.getInt(SELECTED_KEY);
         }
             return  rootView;
     }
-    public void showDialog() {
+    public void showDialog(String trackID) {
         FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
         NowPlayingFragment newFragment = new NowPlayingFragment();
+        Bundle args = new Bundle();
+        args.putString("trackID", trackID);
+        newFragment.setArguments(args);
 
         if (mIsLargeLayout) {
             // The device is using a large layout, so show the fragment as a dialog
             newFragment.show(fragmentManager, "dialog");
         } else {
-            // The device is smaller, so show the fragment fullscreen
-            FragmentTransaction transaction = fragmentManager.beginTransaction();
-            // For a little polish, specify a transition animation
-            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
-            // To make it fullscreen, use the 'content' root view as the container
-            // for the fragment, which is always the root view for the activity
 
-            //TODO: Fix phone UI - the fragment is showing on top of the top tracks UI.
-            transaction.add(android.R.id.content, newFragment)
-                    .addToBackStack(null).commit();
+
+            Intent intent = new Intent(getActivity(),NowPlayingActivity.class);
+            intent.putExtra("trackID", trackID);
+            startActivity(intent);
+
+
         }
     }
 

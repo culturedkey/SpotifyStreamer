@@ -17,11 +17,11 @@ import kaaes.spotify.webapi.android.models.Track;
 /**
  * Created by Christen on 7/4/2015.
  */
-public class TrackAdapter extends ArrayAdapter<Track> {
+public class TracksAdapter extends ArrayAdapter<Track> {
     private Context context;
     private List<Track> topTracks;
 
-    public TrackAdapter(Context context, int resource, List<Track> tracks)
+    public TracksAdapter(Context context, int resource, List<Track> tracks)
     {
         super(context, resource, tracks);
         this.context = context;

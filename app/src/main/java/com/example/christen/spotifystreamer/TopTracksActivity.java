@@ -2,6 +2,7 @@ package com.example.christen.spotifystreamer;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.Toolbar;
 
@@ -36,9 +37,10 @@ public class TopTracksActivity extends ActionBarActivity {
                     .add(R.id.top_track_container, fragment)
                     .commit();
 
-
-            String artistName = artistInfo.substring(artistInfo.indexOf(",") + 2);
-            toolbar.setSubtitle(artistName);
+            if(artistInfo != null) {
+                String artistName = artistInfo.substring(artistInfo.indexOf(",") + 2);
+                toolbar.setSubtitle(artistName);
+            }
         }
         else{
             String artistName = savedInstanceState.getString("artistID");
@@ -52,16 +54,16 @@ public class TopTracksActivity extends ActionBarActivity {
             }
         }
 
-//        FragmentManager fm = getSupportFragmentManager();
-//        mTaskFragment = (MainActivityFragment) fm.findFragmentByTag(TAG_TASK_FRAGMENT);
-//
-//        // If the Fragment is non-null, then it is currently being
-//        // retained across a configuration change.
-//        if (mTaskFragment == null) {
-//            mTaskFragment = new MainActivityFragment();
-//            fm.beginTransaction()
-//                    .add(mTaskFragment, TAG_TASK_FRAGMENT).commit();
-//        }
+        FragmentManager fm = getSupportFragmentManager();
+        mTaskFragment = (MainActivityFragment) fm.findFragmentByTag(TAG_TASK_FRAGMENT);
+
+        // If the Fragment is non-null, then it is currently being
+        // retained across a configuration change.
+        if (mTaskFragment == null) {
+            mTaskFragment = new MainActivityFragment();
+            fm.beginTransaction()
+                    .add(mTaskFragment, TAG_TASK_FRAGMENT).commit();
+        }
 
         toolbar.setTitle(R.string.toolBar_title_topTen);
         setSupportActionBar(toolbar);

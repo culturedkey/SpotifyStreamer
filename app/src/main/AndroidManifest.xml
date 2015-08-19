@@ -2,8 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.christen.spotifystreamer" >
 
-    <!-- This permission is necessary in order for Sunshine to perform network access. -->
+    <!-- This permission is necessary in order for Spotify Streamer to perform network access. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- This permission is necessary for the streamer to keep wifi awake while playing music. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -29,8 +31,13 @@
         </activity>
         <activity
             android:name=".NowPlayingActivity"
-            android:label="@string/title_activity_now_playing" >
+            android:label="@string/title_activity_now_playing"
+            android:parentActivityName=".TopTracksActivity">
+        <meta-data
+            android:name="android.support.PARENT_ACTIVITY"
+            android:value="com.example.christen.spotifystreamer.TopTracksActivity" />
         </activity>
+        <service android:name=".NowPlayingFragment$SpotifyPlayerService"/>
     </application>
 
 </manifest>

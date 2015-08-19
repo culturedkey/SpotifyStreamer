@@ -8,6 +8,7 @@
         android:background="#89c149"
         android:contentInsetEnd="0dp"
         android:contentInsetStart="0dp"
+        android:gravity="center_horizontal"
 
         />
 </merge>

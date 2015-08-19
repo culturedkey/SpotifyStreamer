@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+    android:orientation="vertical" android:layout_width="wrap_content"
     android:layout_height="match_parent"
+    android:gravity="center_horizontal"
     android:layout_below="@+id/nowPlayActivityToolbar"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.example.christen.spotifystreamer.NowPlayingFragment"
-    android:gravity="center_horizontal">
+    tools:context="com.example.christen.spotifystreamer.NowPlayingFragment">
+
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/artistTextview"
-        android:textColor="@color/primary_material_dark" />
+        android:id="@+id/artistTextview"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -21,12 +21,11 @@
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:minHeight="200dp"
-        android:minWidth="200dp"
-
+        android:minHeight="300dp"
+        android:minWidth="300dp"
         android:id="@+id/albumArtImageview"
-        android:layout_marginLeft="75dp"
-        android:layout_marginRight="75dp" />
+        android:layout_marginLeft="25dp"
+        android:layout_marginRight="25dp" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -35,7 +34,7 @@
         android:layout_gravity="center_horizontal" />
 
     <SeekBar
-        android:layout_width="match_parent"
+        android:layout_width="400dp"
         android:layout_height="wrap_content"
         android:id="@+id/seekBar"
         android:layout_gravity="center_horizontal"
@@ -44,6 +43,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+
         android:layout_marginLeft="25dp"
         android:layout_marginRight="25dp">
 
@@ -67,7 +67,7 @@
 
     <LinearLayout
         android:orientation="horizontal"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:layout_marginLeft="25dp"
@@ -76,7 +76,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
 
-            android:gravity="center_horizontal"
             android:id="@+id/previousButton"
             android:src="@android:drawable/ic_media_previous" />
 
@@ -84,8 +83,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/playButton"
-            android:onClick="playTrack"
-            android:gravity="center_horizontal"
+
             android:src="@android:drawable/ic_media_play"
             android:layout_marginLeft="25dp" />
 
@@ -97,7 +95,4 @@
             android:layout_marginLeft="25dp" />
 
     </LinearLayout>
-
-
-
 </LinearLayout>
