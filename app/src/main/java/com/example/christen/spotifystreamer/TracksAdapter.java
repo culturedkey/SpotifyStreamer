@@ -10,22 +10,20 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-import java.util.List;
-
-import kaaes.spotify.webapi.android.models.Track;
+import java.util.ArrayList;
 
 /**
  * Created by Christen on 7/4/2015.
  */
-public class TracksAdapter extends ArrayAdapter<Track> {
+public class TracksAdapter extends ArrayAdapter<ParcelableTrack> {
     private Context context;
-    private List<Track> topTracks;
+    public ArrayList<ParcelableTrack> topTracksList;
 
-    public TracksAdapter(Context context, int resource, List<Track> tracks)
+    public TracksAdapter(Context context, int resource, ArrayList<ParcelableTrack> tracksList)
     {
-        super(context, resource, tracks);
+        super(context, resource, tracksList);
         this.context = context;
-        this.topTracks = tracks;
+        this.topTracksList = tracksList;
 
     }
 
@@ -38,7 +36,7 @@ public class TracksAdapter extends ArrayAdapter<Track> {
         // A holder will hold the references
         // to your views.
         viewHolder holder;
-        Track track = topTracks.get(position);
+        ParcelableTrack track = topTracksList.get(position);
         if(convertView == null) {
             convertView = inflater.inflate(R.layout.list_item_track, parent, false);
             holder = new viewHolder();
@@ -50,12 +48,12 @@ public class TracksAdapter extends ArrayAdapter<Track> {
         else {
             holder = (viewHolder) convertView.getTag();
         }
-        holder.trackTextView.setText(track.name);
-        holder.albumTextView.setText(track.album.name);
-        if (track.album.images != null) {
-            if (track.album.images.size()>= 1) {
+        holder.trackTextView.setText(track.playlist.name);
+        holder.albumTextView.setText(track.playlist.album.name);
+        if (track.playlist.album.images != null) {
+            if (track.playlist.album.images.size()>= 1) {
                 Picasso.with(context)
-                        .load(track.album.images.get(track.album.images.size()-1).url)
+                        .load(track.playlist.album.images.get(track.playlist.album.images.size()-1).url)
                         .into(holder.trackImageView);
             }
             else {

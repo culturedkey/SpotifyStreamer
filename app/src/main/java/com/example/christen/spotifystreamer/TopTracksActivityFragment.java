@@ -32,7 +32,7 @@ import retrofit.client.Response;
 public class TopTracksActivityFragment extends Fragment {
 
     private View rootView;
-    private ArrayList<Track> topTracks;
+    private ArrayList<ParcelableTrack> topTracks;
     private TracksAdapter trackResultsAdapter;
 
     private int mPosition = ListView.INVALID_POSITION;
@@ -61,7 +61,7 @@ public class TopTracksActivityFragment extends Fragment {
 
         if (topTracks == null)
         {
-            topTracks = new ArrayList<Track>();
+            topTracks = new ArrayList<ParcelableTrack>();
         }
 
          trackResultsAdapter =
@@ -78,11 +78,10 @@ public class TopTracksActivityFragment extends Fragment {
 
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                Track trackSelected = trackResultsAdapter.getItem(position);
-                String trackID = trackSelected.id;
-                if (trackSelected != null) {
-                    //TODO: Get track info and pass to next intent!
-                    showDialog(trackID);
+
+                int trackSelected = position;
+                if (trackResultsAdapter.topTracksList != null) {
+                    showDialog(trackResultsAdapter.topTracksList, trackSelected);
                 }
                 mPosition = position;
             }
@@ -118,21 +117,32 @@ public class TopTracksActivityFragment extends Fragment {
         }
             return  rootView;
     }
-    public void showDialog(String trackID) {
+    public void showDialog(ArrayList<ParcelableTrack> playlist, int position) {
         FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
         NowPlayingFragment newFragment = new NowPlayingFragment();
-        Bundle args = new Bundle();
-        args.putString("trackID", trackID);
-        newFragment.setArguments(args);
+        ArrayList<String> trackIDList = new ArrayList<String>();
+
+        if(playlist != null){
+            for(int i=0; i<playlist.size(); i++){
+                trackIDList.add(i, playlist.get(i).playlist.id);
+            }
+        }
+
 
         if (mIsLargeLayout) {
+
+            Bundle args = new Bundle();
+            args.putInt("position", position);
+            args.putStringArrayList("playlist", trackIDList);
+            newFragment.setArguments(args);
             // The device is using a large layout, so show the fragment as a dialog
             newFragment.show(fragmentManager, "dialog");
         } else {
 
 
             Intent intent = new Intent(getActivity(),NowPlayingActivity.class);
-            intent.putExtra("trackID", trackID);
+            intent.putExtra("position", position);
+            intent.putStringArrayListExtra("playlist", trackIDList);
             startActivity(intent);
 
 
@@ -175,8 +185,9 @@ public class TopTracksActivityFragment extends Fragment {
 
                     trackResultsAdapter.clear();
                     for(Track track : tracks.tracks){
-                        trackResultsAdapter.add(track);
+                        trackResultsAdapter.add(new ParcelableTrack(track));
                     }
+                    trackResultsAdapter.topTracksList = topTracks;
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
