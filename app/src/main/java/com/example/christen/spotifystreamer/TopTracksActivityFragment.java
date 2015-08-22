@@ -80,9 +80,12 @@ public class TopTracksActivityFragment extends Fragment {
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
                 Track trackSelected = trackResultsAdapter.getItem(position);
                 String trackID = trackSelected.id;
+                ArrayList<String> trackIDList = new ArrayList<String>();
+                for(int i=0; i<trackResultsAdapter.getCount();i++){
+                    trackIDList.add(i,trackResultsAdapter.getItem(i).id);
+                }
                 if (trackSelected != null) {
-                    //TODO: Get track info and pass to next intent!
-                    showDialog(trackID);
+                    showDialog(trackIDList, position);
                 }
                 mPosition = position;
             }
@@ -118,11 +121,12 @@ public class TopTracksActivityFragment extends Fragment {
         }
             return  rootView;
     }
-    public void showDialog(String trackID) {
+    public void showDialog(ArrayList<String> idList, int position) {
         FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
         NowPlayingFragment newFragment = new NowPlayingFragment();
         Bundle args = new Bundle();
-        args.putString("trackID", trackID);
+        args.putStringArrayList("playlist", idList);
+        args.putInt("position", position);
         newFragment.setArguments(args);
 
         if (mIsLargeLayout) {
@@ -132,7 +136,8 @@ public class TopTracksActivityFragment extends Fragment {
 
 
             Intent intent = new Intent(getActivity(),NowPlayingActivity.class);
-            intent.putExtra("trackID", trackID);
+            intent.putExtra("playlist", idList);
+            intent.putExtra("position", position);
             startActivity(intent);
 
 

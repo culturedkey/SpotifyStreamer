@@ -18,9 +18,10 @@ public class NowPlayingActivity extends ActionBarActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.nowPlayActivityToolbar);
 
         NowPlayingFragment newFragment = new NowPlayingFragment();
-        if (getIntent().hasExtra("trackID")){
+        if (getIntent() != null && getIntent().hasExtra("position") && getIntent().hasExtra("playlist")){
             Bundle args = new Bundle();
-            args.putString("trackID",getIntent().getStringExtra("trackID"));
+            args.putStringArrayList("playlist",getIntent().getStringArrayListExtra("playlist"));
+            args.putInt("position",getIntent().getIntExtra("position",-1));
             newFragment.setArguments(args);
         }
 
