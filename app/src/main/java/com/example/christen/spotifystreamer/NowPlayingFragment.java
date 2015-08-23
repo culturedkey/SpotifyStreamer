@@ -275,7 +275,7 @@ public class NowPlayingFragment extends DialogFragment {
             //Reset since we'll be calling this when user is playing subsequent songs
             mMediaPlayer.reset();
             Track playTrack = selectedTrack;
-            String trackUrl = playTrack.uri;
+            String trackUrl = playTrack.preview_url;
 
             try{
                 mMediaPlayer.setDataSource(trackUrl);
