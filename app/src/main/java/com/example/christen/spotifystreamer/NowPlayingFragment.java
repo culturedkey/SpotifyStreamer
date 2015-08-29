@@ -1,15 +1,16 @@
 package com.example.christen.spotifystreamer;
 
+
+import android.app.Activity;
 import android.app.Dialog;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.net.wifi.WifiManager;
-import android.os.Binder;
 import android.os.Bundle;
-import android.os.IBinder;
+import android.os.Handler;
+import android.os.Message;
+import android.os.RemoteException;
 import android.support.v4.app.DialogFragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -18,6 +19,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +27,8 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
@@ -39,11 +43,17 @@ import retrofit.client.Response;
 /**
  * Created by Christen on 8/16/2015.
  */
-public class NowPlayingFragment extends DialogFragment {
+public class NowPlayingFragment extends DialogFragment{
     private View mrootView;
     public static final int SERVICE_NOTIFICATION_ID = 15;
     public String songURL;
     public boolean isPlaying = false;
+    public static int mDuration = -1;
+    public SeekBar mSeekbar;
+    public Bundle mInputArgs;
+    public TextView elapsedTimeView;
+    public static TextView totalTimeView;
+    private ServiceManager musicService;
 
     Intent playIntent ;
     private int mPosition;
@@ -54,6 +64,7 @@ public class NowPlayingFragment extends DialogFragment {
 
         // Retain this fragment across configuration changes.
         setRetainInstance(true);
+
     }
 
     @Override
@@ -61,32 +72,102 @@ public class NowPlayingFragment extends DialogFragment {
                              Bundle savedInstanceState) {
         // Inflate the layout to use as dialog or embedded fragment
         mrootView = inflater.inflate(R.layout.now_playing_fragment, container, false);
+        // Create a service 'SomeService1' (see below) and handle incoming messages
+        musicService = new ServiceManager(getActivity().getApplicationContext(), SpotifyPlayerService.class, new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                // Receive message from service
+                switch (msg.what) {
+
+                    case SpotifyPlayerService.MSG_SEEKPOSITION: {
+                        int location = msg.getData().getInt("duration");
+                        setSeekBarLocation(location);
+                        break;
+                    }
+
+                    default:
+                        super.handleMessage(msg);
+                }
+            }
+        });
+        musicService.start();
+        mSeekbar = (SeekBar) mrootView.findViewById(R.id.seekBar);
+        totalTimeView = (TextView) mrootView.findViewById(R.id.totalTimeTextView);
+        totalTimeView.setText("0:30");
+        mSeekbar.setMax(30);
+        mSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    Bundle args = new Bundle();
+                    Message message = new Message();
+                    args.putString("action", "seek");
+                    args.putInt("position", progress);
+                    message.setData(args);
+                    try {
+                        musicService.send(message);
+                    } catch (RemoteException e) {
+                        Log.e("RemoteException", "Remote exception in getTrack pause message: " + e.getMessage());
+                    } finally {
+                        setSeekBarLocation(progress);
+                    }
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
         playIntent = new Intent(getActivity(),SpotifyPlayerService.class);
-        Bundle args = getArguments();
-        if (args != null && args.containsKey("playlist") && args.containsKey("position")){
-            mPosition = args.getInt("position",-1);
-            mTracksList = args.getStringArrayList("playlist");
-            getTrack(mTracksList.get(mPosition), mrootView);
+        mInputArgs = getArguments();
+        if (mInputArgs != null && mInputArgs.containsKey("playlist") && mInputArgs.containsKey("position")){
+            mPosition = mInputArgs.getInt("position",-1);
+            mTracksList = mInputArgs.getStringArrayList("playlist");
+
+            if (mInputArgs.containsKey("elapsedTime")){
+
+                getTrack(mTracksList.get(mPosition), mrootView, mInputArgs.getInt("elapsedTime"));
+            }
+            else {
+                getTrack(mTracksList.get(mPosition), mrootView, -1);
+            }
         }
 
-        ImageButton playButton = (ImageButton) mrootView.findViewById(R.id.playButton);
+        final ImageButton playButton = (ImageButton) mrootView.findViewById(R.id.playButton);
 
         playButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 ImageButton button = (ImageButton) mrootView.findViewById(R.id.playButton);
                 if (songURL != null && !isPlaying) {
-                    playIntent.putExtra("songURL", songURL);
-                    playIntent.setAction("com.example.action.PLAY");
-                    getActivity().startService(playIntent);
+
+                    playSong();
                     if (button != null) {
                         Picasso.with(mrootView.getContext())
                                 .load(R.drawable.ic_media_pause)
                                 .into(button);
                     }
                     isPlaying = true;
+
                 } else if (songURL != null && isPlaying) {
-                    playIntent.setAction("com.example.action.PAUSE");
-                    getActivity().startService(playIntent);
+
+
+                    Bundle args = new Bundle();
+                    Message message = new Message();
+                    args.putString("action", "pause");
+                    message.setData(args);
+                    try{
+                        musicService.send(message);
+                    }
+                    catch (RemoteException e){
+                        Log.e("RemoteException", "Remote exception in getTrack pause message: " + e.getMessage() );
+                    }
+
                     if (button != null) {
                         Picasso.with(mrootView.getContext())
                                 .load(R.drawable.ic_media_play)
@@ -99,25 +180,16 @@ public class NowPlayingFragment extends DialogFragment {
 
         ImageButton nextButton = (ImageButton) mrootView.findViewById(R.id.nextButton);
 
-        nextButton.setOnClickListener(new View.OnClickListener(){
+        nextButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                if (songURL != null && mPosition+1 < mTracksList.size()) {
+                if (songURL != null && mPosition + 1 < mTracksList.size()) {
                     mPosition++;
-//
-//                    Log.d("PlayFragment","URL IS: " + songURL);
-//                    songURL = null;
-                    getTrack(mTracksList.get(mPosition), mrootView);
-//                    Log.d("PlayFragment","URL IS: " + songURL);
-//                    if (songURL != null){
-//                        playIntent.putExtra("songURL", songURL);
-//                        playIntent.setAction("com.example.action.PLAY");
-//                        getActivity().startService(playIntent);
-//                        isPlaying = true;
-//                    }
-                }
-                else {
+                    mInputArgs.putInt("position", mPosition);
+                    getTrack(mTracksList.get(mPosition), mrootView, -1);
+
+                } else {
                     Log.d("PlayFragment", "songURL is null or mPosition is too big. " + songURL + ", " + mPosition + ", " + mTracksList.size());
                 }
             }
@@ -131,17 +203,10 @@ public class NowPlayingFragment extends DialogFragment {
             public void onClick(View v) {
                 if (songURL != null && mPosition - 1 >= 0) {
                     mPosition--;
-//
-//                    Log.d("PlayFragment","URL IS: " + songURL);
-//                    songURL = null;
-                    getTrack(mTracksList.get(mPosition), mrootView);
-//                    Log.d("PlayFragment","URL IS: " + songURL);
-//                    if (songURL != null){
-//                        playIntent.putExtra("songURL", songURL);
-//                        playIntent.setAction("com.example.action.PLAY");
-//                        getActivity().startService(playIntent);
-//                        isPlaying = true;
-//                    }
+
+                    mInputArgs.putInt("position", mPosition);
+                    getTrack(mTracksList.get(mPosition), mrootView, -1);
+
                 } else {
                     Log.d("PlayFragment", "songURL is null or mPosition is messed up. " + songURL + ", " + mPosition);
                 }
@@ -149,6 +214,24 @@ public class NowPlayingFragment extends DialogFragment {
         });
 
         return mrootView;
+    }
+
+    public void setSeekBarLocation (int location){
+       if (location < mSeekbar.getMax()) {
+           mSeekbar.setProgress(location);
+           String duration = "";
+           if (location <10){
+               duration = String.format("%d:0%d",
+                       TimeUnit.SECONDS.toMinutes(location), location);
+           }
+           else {
+               duration = String.format("%d:%d",
+                       TimeUnit.SECONDS.toMinutes(location), location);}
+           mInputArgs.putInt("elapsedTime", location);
+
+
+           elapsedTimeView.setText(duration);
+       }
     }
 
     /** The system calls this only when creating the layout in a dialog. */
@@ -162,7 +245,7 @@ public class NowPlayingFragment extends DialogFragment {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         return dialog;
     }
-    private void getTrack (final String trackID, final View rootView){
+    private void getTrack (final String trackID, final View rootView, final int elapsedTime){
         //Setup spotify wrapper and get tracks
 
 
@@ -173,7 +256,7 @@ public class NowPlayingFragment extends DialogFragment {
         spotify.getTrack(trackID, map, new Callback<Track>() {
             @Override
             public void failure(RetrofitError spotifyError) {
-                Log.e("RetrofitError", "Error: " + spotifyError.getMessage());
+                Log.e("RetrofitError", "Error in getting track: " + spotifyError.getMessage());
                 int duration = Toast.LENGTH_SHORT;
                 Context context = rootView.getContext();
                 CharSequence text = getString(R.string.checkConnection);
@@ -184,129 +267,131 @@ public class NowPlayingFragment extends DialogFragment {
             @Override
             public void success(final Track track, Response response) {
                 if (track != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            songURL = track.preview_url;
-                            TextView artistView = (TextView) rootView.findViewById(R.id.artistTextview);
-                            String artists = "";
-                            for (int i = 0; i < track.artists.size(); i++) {
-                                ArtistSimple artist = track.artists.get(i);
-                                artists.concat(artist.name).concat(", ");
-                            }
-                            artistView.setText(artists);
+                    Activity parent = getActivity();
 
-                            TextView albumView = (TextView) rootView.findViewById(R.id.albumTextview);
-                            albumView.setText(track.album.name);
+                    if (parent != null) {
 
-                            ImageView albumArtImage = (ImageView) rootView.findViewById(R.id.albumArtImageview);
-                            if (track.album.images.size() >= 1) {
-                                Picasso.with(rootView.getContext())
-                                        .load(track.album.images.get(1).url)
-                                        .into(albumArtImage);
-                            }
+                        parent.runOnUiThread(new Runnable() {
+                                                 @Override
+                                                 public void run() {
+                                                     songURL = track.preview_url;
+                                                     TextView artistView = (TextView) rootView.findViewById(R.id.artistTextview);
+                                                     String artists = "";
+                                                     for (int i = 0; i < track.artists.size(); i++) {
+                                                         ArtistSimple artist = track.artists.get(i);
+                                                         artists.concat(artist.name).concat(", ");
+                                                     }
+                                                     artistView.setText(artists);
 
-                            TextView songView = (TextView) rootView.findViewById(R.id.songTextview);
-                            songView.setText(track.name);
+                                                     TextView albumView = (TextView) rootView.findViewById(R.id.albumTextview);
+                                                     albumView.setText(track.album.name);
 
-                            TextView elapsedTimeView = (TextView) rootView.findViewById(R.id.elapsedTimeTextView);
-                            elapsedTimeView.setText("0:00");
+                                                     ImageView albumArtImage = (ImageView) rootView.findViewById(R.id.albumArtImageview);
+                                                     if (track.album.images.size() >= 1) {
+                                                         Picasso.with(rootView.getContext())
+                                                                 .load(track.album.images.get(1).url)
+                                                                 .into(albumArtImage);
+                                                     }
 
-                            TextView totalTimeView = (TextView) rootView.findViewById(R.id.totalTimeTextView);
-                            String duration = String.format("%d:%d",
-                                    TimeUnit.MILLISECONDS.toMinutes(track.duration_ms),
-                                    TimeUnit.MILLISECONDS.toSeconds(track.duration_ms) -
-                                            TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(track.duration_ms)));
-                            totalTimeView.setText(duration);
-                            ImageButton button = (ImageButton) rootView.findViewById(R.id.playButton);
+                                                     TextView songView = (TextView) rootView.findViewById(R.id.songTextview);
+                                                     songView.setText(track.name);
 
-                            if (songURL != null){
-                                playIntent.putExtra("songURL", songURL);
-                                playIntent.setAction("com.example.action.PLAY");
-                                getActivity().startService(playIntent);
-                                isPlaying = true;
-                                if (button != null) {
-                                    Picasso.with(mrootView.getContext())
-                                            .load(R.drawable.ic_media_pause)
-                                            .into(button);
-                                }
-                            }
-                        }
-                    });
+                                                     elapsedTimeView = (TextView) rootView.findViewById(R.id.elapsedTimeTextView);
+
+                                                     if (elapsedTime > -1) {
+                                                         String duration = "";
+                                                         if (elapsedTime < 10) {
+                                                             duration = String.format("%d:0%d",
+                                                                     TimeUnit.SECONDS.toMinutes(elapsedTime), elapsedTime);
+                                                         } else {
+                                                             duration = String.format("%d:%d",
+                                                                     TimeUnit.SECONDS.toMinutes(elapsedTime), elapsedTime);
+                                                         }
+                                                         elapsedTimeView.setText(duration);
+                                                     } else {
+                                                         elapsedTimeView.setText("0:00");
+                                                     }
+                                                     ImageButton button = (ImageButton) rootView.findViewById(R.id.playButton);
+
+                                                     playSong();
+
+                                                     isPlaying = true;
+                                                     if (button != null) {
+                                                         Picasso.with(mrootView.getContext())
+                                                                 .load(R.drawable.ic_media_pause)
+                                                                 .into(button);
+                                                     }
+                                                 }
+                                             }
+                        );
+                    } else {
+                        Log.e("GetTrackActivityIssue", "Parent activity is null?");
+                    }
                 }
             }
         });
     }
 
+    public void playSong (){
+        if (songURL != null) {
+            Bundle args = new Bundle();
+            Message message = new Message();
+            args.putString("songURL", songURL);
+            args.putString("action", "play");
+            message.setData(args);
+            try {
+                musicService.send(message);
+            } catch (RemoteException e) {
+                Log.e("RemoteException", "Remote exception in getTrack play message: " + e.getMessage());
+            }
+        }
+    }
 
+    //Fix to override bug in V4 compat library per https://code.google.com/p/android/issues/detail?id=17423
+    @Override
+    public void onDestroyView() {
+
+        Log.d("DestroyDialog", "Dialog is being destroyed.");
+        if (getDialog() != null && getRetainInstance()) {
+            getDialog().setDismissMessage(null);
+        }
+
+        if(musicService != null && musicService.isRunning()){
+            musicService.stop();
+        }
+        super.onDestroyView();
+    }
 
     public void onDestroy (){
         super.onDestroy();
-        getActivity().stopService(playIntent);
     }
 
     //Modified from http://developer.android.com/guide/topics/media/mediaplayer.html#mediaplayer
     //Service to asynchronously play music in the background
-    public static class SpotifyPlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener
+    public static class SpotifyPlayerService extends AbstractService implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener
     {
-        private static final String ACTION_PLAY = "com.example.action.PLAY";
-        private static final String ACTION_PAUSE = "com.example.action.PAUSE";
+        //private static final String ACTION_PLAY = "com.example.action.PLAY";
+        //private static final String ACTION_PAUSE = "com.example.action.PAUSE";
+
+        private String currentURL;
 
         MediaPlayer mMediaPlayer = null;
-        private WifiManager.WifiLock wifiLock;
+        //private WifiManager.WifiLock wifiLock;
 
 
-        public int onStartCommand(Intent intent, int flags, int startId) {
-            Log.d("PlayerService","In on start command");
-            switch (intent.getAction()){
-                case ACTION_PAUSE:
-                    if (mMediaPlayer != null && mMediaPlayer.isPlaying()){
-                        mMediaPlayer.pause();
-                        Log.d("PlayerService", "Paused player");
-                    }
-                    return START_STICKY;
-                case ACTION_PLAY:
-                    if (mMediaPlayer == null) {
-                        mMediaPlayer = new MediaPlayer();// initialize it here
+        public void playSong(String url) {
+           try{
+                currentURL = url;
+                mMediaPlayer.setDataSource(url);
+                mMediaPlayer.prepareAsync(); // prepare async to not block main thread
 
-                        Log.d("PlayerService", "Set up player");
-                        mMediaPlayer.setOnPreparedListener(this);
-                        mMediaPlayer.setOnErrorListener(this);
-                        mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                        playSong(intent);
-
-                    }
-                    else if (mMediaPlayer != null){
-
-                        Log.d("PlayerService", "Playing new song...");
-                        mMediaPlayer.reset();
-                        playSong(intent);
-                    }
-                    return START_STICKY;
             }
-
-//            if (intent.getAction().equals(ACTION_PLAY)) {
-//                mMediaPlayer = new MediaPlayer();// initialize it here
-//                playSong(intent);
-//            }
-            return START_STICKY;
-        }
-        public void playSong(Intent intent) {
-            //TODO: ...initialize the MediaPlayer here...
-            // Code snippet from "Running as a Foreground service" in media playback guide
-
-            if(intent.hasExtra("songURL")){
-                String url = intent.getStringExtra("songURL");
-                try{
-                    mMediaPlayer.setDataSource(url);
-                    mMediaPlayer.prepareAsync(); // prepare async to not block main thread
-                }
-                catch (java.io.IOException e){
-                    Log.e("IOException", "Error: " + e.getMessage());
-                }
-                catch ( java.lang.IllegalArgumentException e){
-                    Log.e("IllegalArgException", "Error: " + e.getMessage());
-                }
+            catch (java.io.IOException e){
+                Log.e("IOException", "IO Exception Error: " + e.getMessage());
+            }
+            catch ( java.lang.IllegalArgumentException e){
+                Log.e("IllegalArgException", "Illegal arg exception Error: " + e.getMessage());
+            }
 //                finally {
 //                    //Set up a notification and make the service run in foreground
 //                    PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
@@ -329,16 +414,30 @@ public class NowPlayingFragment extends DialogFragment {
 //
 //                    wifiLock.acquire();
 //                }
-            }
-
         }
-        @Override
-        public IBinder onBind(Intent intent) {
-            return new LocalBinder();
-        }
+//        @Override
+//        public IBinder onBind(Intent intent) {
+//            return new LocalBinder();
+//        }
         /** Called when MediaPlayer is ready */
         public void onPrepared(MediaPlayer player){
             player.start();
+
+            mDuration = (int) TimeUnit.MILLISECONDS.toSeconds(mMediaPlayer.getDuration());
+            TimerTask task = new TimerTask(){
+                public void run() {
+                    try {
+                        Bundle args = new Bundle();
+                        int position = (int) TimeUnit.MILLISECONDS.toSeconds(mMediaPlayer.getCurrentPosition());
+                        args.putInt("duration", position);
+                        Message message = new Message();
+                        message.setData(args);
+                        message.what = MSG_SEEKPOSITION;
+                        send(message);
+                    }
+                    catch (Throwable t) { }
+                };};
+            timer.scheduleAtFixedRate(task, 0, 1000);
         }
         @Override
         public boolean onError(MediaPlayer mp, int what, int extra) {
@@ -347,6 +446,7 @@ public class NowPlayingFragment extends DialogFragment {
             //Release wifi locks?
             // The MediaPlayer has moved to the Error state, must be reset!
             // Full state diagram is at http://developer.android.com/reference/android/media/MediaPlayer.html
+            mMediaPlayer.reset();
             return false;
         }
         /**
@@ -354,25 +454,90 @@ public class NowPlayingFragment extends DialogFragment {
          * runs in the same process as its clients, we don't need to deal with
          * IPC. Modified from http://developer.android.com/reference/android/app/Service.html
          */
-        public class LocalBinder extends Binder {
-            SpotifyPlayerService getService() {
-                return SpotifyPlayerService.this;
-            }
-        }
+//        public class LocalBinder extends Binder {
+//            SpotifyPlayerService getService() {
+//                return SpotifyPlayerService.this;
+//            }
+//        }
 
         @Override
         public void onDestroy(){
             //Clean up all resources
 
             //Take service out of foreground
-            stopForeground(true);
+            //stopForeground(true);
             //Release wifi lock
-            if(wifiLock != null && wifiLock.isHeld()){
-                wifiLock.release();
-            }
+//            if(wifiLock != null && wifiLock.isHeld()){
+//                wifiLock.release();
+//            }
             //Release player
             if (mMediaPlayer != null) mMediaPlayer.release();
 
+        }
+        public static final int MSG_SEEKPOSITION = 3;
+        //public static final int MSG_DURATION = 4;
+
+        private Timer timer = new Timer();
+
+        @Override
+        public void onStartService() {
+
+            mMediaPlayer = new MediaPlayer();// initialize it here
+
+            Log.d("PlayerService", "Set up player");
+            mMediaPlayer.setOnPreparedListener(this);
+            mMediaPlayer.setOnErrorListener(this);
+            mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        }
+
+        @Override
+        public void onStopService() {
+            Log.d("StopService", "Service is being stopped.");
+            if (timer != null) {timer.cancel();}
+
+            if (mMediaPlayer != null) mMediaPlayer.release();
+
+        }
+
+        @Override
+        public void onReceiveMessage(Message msg) {
+            Bundle args = msg.getData();
+
+            if (args.containsKey("action")){
+                switch (args.getString("action")){
+                    case "play":
+                    {
+
+                        if(args.containsKey("songURL")) {
+                            if (currentURL != args.getString("songURL")) {
+
+                                mMediaPlayer.reset();
+
+                                playSong(args.getString("songURL"));
+                            }
+                            else
+                            {
+                                mMediaPlayer.start();
+                            }
+                        }
+                        break;
+                    }
+                    case "pause":
+                    {
+                        mMediaPlayer.pause();
+                        break;
+                    }
+
+                    case "seek":{
+                        if(args.containsKey("position")){
+                            if(mMediaPlayer.isPlaying()){
+                                mMediaPlayer.seekTo((int)TimeUnit.SECONDS.toMillis(args.getInt("position")));
+                            }
+                        }
+                    }
+
+                }
+            }
         }
     }
 

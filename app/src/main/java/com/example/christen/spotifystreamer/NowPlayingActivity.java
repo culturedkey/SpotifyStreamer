@@ -10,6 +10,7 @@ import android.view.MenuItem;
 
 public class NowPlayingActivity extends ActionBarActivity {
 
+    public String PLAY_TAG = "playTag";
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -20,15 +21,17 @@ public class NowPlayingActivity extends ActionBarActivity {
         NowPlayingFragment newFragment = new NowPlayingFragment();
         if (getIntent() != null && getIntent().hasExtra("position") && getIntent().hasExtra("playlist")){
             Bundle args = new Bundle();
-            args.putStringArrayList("playlist",getIntent().getStringArrayListExtra("playlist"));
-            args.putInt("position",getIntent().getIntExtra("position",-1));
+            args.putStringArrayList("playlist", getIntent().getStringArrayListExtra("playlist"));
+            args.putInt("position", getIntent().getIntExtra("position", -1));
             newFragment.setArguments(args);
         }
 
         FragmentManager fragmentManager = getSupportFragmentManager();
         //Need to associate fragment
         FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.add(R.id.nowPlayingActivity, newFragment).commit();
+        if(fragmentManager.findFragmentByTag(PLAY_TAG) == null){
+            transaction.replace(R.id.nowPlayingActivity, newFragment,PLAY_TAG).commit();
+        }
         toolbar.setTitle(R.string.toolBar_title_nowPlaying);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
