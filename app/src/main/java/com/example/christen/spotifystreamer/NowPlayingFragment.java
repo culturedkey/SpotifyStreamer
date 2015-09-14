@@ -93,8 +93,8 @@ public class NowPlayingFragment extends DialogFragment{
         musicService.start();
         mSeekbar = (SeekBar) mrootView.findViewById(R.id.seekBar);
         totalTimeView = (TextView) mrootView.findViewById(R.id.totalTimeTextView);
-        totalTimeView.setText("0:30");
-        mSeekbar.setMax(30);
+        totalTimeView.setText("0:29");
+        mSeekbar.setMax(29);
         mSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
